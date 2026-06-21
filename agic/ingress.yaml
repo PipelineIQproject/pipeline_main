@@ -10,10 +10,10 @@ spec:
   ingressClassName: azure-application-gateway
   tls:
     - hosts:
-        - pipelinesolutions.xyz
+        - www.pipelinesolutions.xyz
       secretName: pipelineiq-tls
   rules:
-    - host: pipelinesolutions.xyz
+    - host: www.pipelinesolutions.xyz
       http:
         paths:
           - path: /api/webhooks/github
