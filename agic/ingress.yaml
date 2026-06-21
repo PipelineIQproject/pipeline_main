@@ -10,7 +10,7 @@ spec:
   ingressClassName: azure-application-gateway
   tls:
     - hosts:
-        - www.aasikdevops.website
+        - www.pipelinesolutions.xyz
       secretName: pipelineiq-tls
   rules:
     - host: www.aasikdevops.website
