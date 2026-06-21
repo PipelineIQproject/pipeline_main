@@ -1,0 +1,359 @@
+name: Reusable Node Service CI/CD
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      node_project_dir:
+        required: true
+        type: string
+      chart_path:
+        required: true
+        type: string
+      container_port:
+        required: true
+        type: string
+      smoke_mode:
+        required: false
+        type: string
+        default: http
+      smoke_path:
+        required: false
+        type: string
+        default: /health
+      helm_repository:
+        required: false
+        type: string
+        default: PipelineIQproject/pipeline_main
+      helm_dev_branch:
+        required: false
+        type: string
+        default: dev
+      helm_prod_branch:
+        required: false
+        type: string
+        default: master
+      production_environment:
+        required: false
+        type: string
+        default: production
+      sonar_organization:
+        required: true
+        type: string
+      sonar_project_key:
+        required: true
+        type: string
+      promote_to_prod:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      ACR_LOGIN_SERVER:
+        required: true
+      ACR_USERNAME:
+        required: true
+      ACR_PASSWORD:
+        required: true
+      SONAR_TOKEN:
+        required: true
+      SNYK_TOKEN:
+        required: true
+      MAIN_REPO_PAT:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
+      SMOKE_TEST_ENV_FILE:
+        required: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build-scan-push:
+    name: Build, Scan, Smoke, Push
+    runs-on: ubuntu-latest
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+      image_tag: ${{ steps.image.outputs.image_tag }}
+    steps:
+      - name: Checkout service repository
+        uses: actions/checkout@v4
+
+      - name: Prepare image metadata
+        id: image
+        shell: bash
+        run: |
+          IMAGE_TAG="${GITHUB_SHA::12}"
+          IMAGE_REF="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${IMAGE_TAG}"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.node_project_dir }}
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Lint when script exists
+        working-directory: ${{ inputs.node_project_dir }}
+        shell: bash
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.lint ? 0 : 1)"; then
+            npm run lint
+          else
+            echo "No lint script found; add one to make this gate stricter."
+          fi
+
+      - name: Test when script exists
+        working-directory: ${{ inputs.node_project_dir }}
+        shell: bash
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
+            npm test
+          else
+            echo "No test script found; add one to make this gate stricter."
+          fi
+
+      - name: Build app when script exists
+        working-directory: ${{ inputs.node_project_dir }}
+        shell: bash
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)"; then
+            npm run build
+          else
+            echo "No build script found; Docker build remains the build gate."
+          fi
+
+      - name: SonarQube Cloud scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.organization=${{ inputs.sonar_organization }}
+            -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+            -Dsonar.sources=.
+
+      - name: Snyk dependency scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --severity-threshold=high
+
+      - name: Build Docker image
+        shell: bash
+        run: docker build -t "${{ steps.image.outputs.image_ref }}" -f "${{ inputs.dockerfile }}" .
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ steps.image.outputs.image_ref }}
+          format: table
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+      - name: Snyk container scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ steps.image.outputs.image_ref }}
+          args: --severity-threshold=high
+
+      - name: Smoke test image
+        shell: bash
+        env:
+          SMOKE_TEST_ENV_FILE: ${{ secrets.SMOKE_TEST_ENV_FILE }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SMOKE_TEST_ENV_FILE:-}" ]; then
+            printf "%s" "$SMOKE_TEST_ENV_FILE" > smoke.env
+            ENV_ARGS="--env-file smoke.env"
+          else
+            ENV_ARGS=""
+          fi
+
+          if [ "${{ inputs.smoke_mode }}" = "http" ]; then
+            docker run -d --name smoke $ENV_ARGS -p 127.0.0.1:${{ inputs.container_port }}:${{ inputs.container_port }} "${{ steps.image.outputs.image_ref }}"
+            for attempt in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:${{ inputs.container_port }}${{ inputs.smoke_path }}"; then
+                docker logs smoke
+                docker rm -f smoke
+                exit 0
+              fi
+              sleep 2
+            done
+            docker logs smoke
+            docker rm -f smoke
+            exit 1
+          fi
+
+          docker run --rm "${{ steps.image.outputs.image_ref }}" node --version
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push image to ACR
+        shell: bash
+        run: docker push "${{ steps.image.outputs.image_ref }}"
+
+  update-dev-values:
+    name: Update Dev Helm Values
+    runs-on: ubuntu-latest
+    needs: build-scan-push
+    if: github.ref == format('refs/heads/{0}', inputs.helm_dev_branch)
+    steps:
+      - name: Checkout main Helm repository dev branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.helm_repository }}
+          ref: ${{ inputs.helm_dev_branch }}
+          token: ${{ secrets.MAIN_REPO_PAT }}
+          path: helm
+
+      - name: Update values-dev.yaml
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
+          tag = "${{ needs.build-scan-push.outputs.image_tag }}"
+          lines = path.read_text().splitlines()
+          out = []
+          in_image = False
+          for line in lines:
+              stripped = line.strip()
+              if stripped == "image:":
+                  in_image = True
+                  out.append(line)
+                  continue
+              if in_image and line and not line.startswith((" ", "\t")):
+                  in_image = False
+              if in_image and stripped.startswith("repository:"):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  out.append(f"{indent}repository: {repository}")
+              elif in_image and stripped.startswith("tag:"):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  out.append(f"{indent}tag: {tag}")
+              else:
+                  out.append(line)
+          path.write_text("\n".join(out) + "\n")
+          PY
+
+      - name: Commit and push dev values
+        working-directory: helm
+        shell: bash
+        run: |
+          git config user.name "pipelineiq-ci"
+          git config user.email "pipelineiq-ci@users.noreply.github.com"
+          git add "${{ inputs.chart_path }}/values-dev.yaml"
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: update ${{ inputs.service_name }} dev image ${{ needs.build-scan-push.outputs.image_tag }}"
+          git push origin "${{ inputs.helm_dev_branch }}"
+
+  update-prod-values:
+    name: Update Prod Helm Values
+    runs-on: ubuntu-latest
+    needs:
+      - build-scan-push
+      - update-dev-values
+    if: inputs.promote_to_prod && github.ref == format('refs/heads/{0}', inputs.helm_dev_branch)
+    environment: ${{ inputs.production_environment }}
+    steps:
+      - name: Checkout main Helm repository master branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.helm_repository }}
+          ref: ${{ inputs.helm_prod_branch }}
+          token: ${{ secrets.MAIN_REPO_PAT }}
+          path: helm
+
+      - name: Update values-prod.yaml
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("helm") / "${{ inputs.chart_path }}" / "values-prod.yaml"
+          repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
+          tag = "${{ needs.build-scan-push.outputs.image_tag }}"
+          lines = path.read_text().splitlines()
+          out = []
+          in_image = False
+          for line in lines:
+              stripped = line.strip()
+              if stripped == "image:":
+                  in_image = True
+                  out.append(line)
+                  continue
+              if in_image and line and not line.startswith((" ", "\t")):
+                  in_image = False
+              if in_image and stripped.startswith("repository:"):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  out.append(f"{indent}repository: {repository}")
+              elif in_image and stripped.startswith("tag:"):
+                  indent = line[:len(line) - len(line.lstrip())]
+                  out.append(f"{indent}tag: {tag}")
+              else:
+                  out.append(line)
+          path.write_text("\n".join(out) + "\n")
+          PY
+
+      - name: Commit and push prod values
+        working-directory: helm
+        shell: bash
+        run: |
+          git config user.name "pipelineiq-ci"
+          git config user.email "pipelineiq-ci@users.noreply.github.com"
+          git add "${{ inputs.chart_path }}/values-prod.yaml"
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: promote ${{ inputs.service_name }} image ${{ needs.build-scan-push.outputs.image_tag }}"
+          git push origin "${{ inputs.helm_prod_branch }}"
+
+  notify-slack:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    needs:
+      - build-scan-push
+      - update-dev-values
+      - update-prod-values
+    if: always()
+    steps:
+      - name: Send pipeline result
+        shell: bash
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="success"
+          if [ "${{ needs.build-scan-push.result }}" = "failure" ] || [ "${{ needs.update-dev-values.result }}" = "failure" ] || [ "${{ needs.update-prod-values.result }}" = "failure" ]; then
+            STATUS="failure"
+          fi
+          TEXT="PipelineIQ ${{ inputs.service_name }} pipeline ${STATUS}: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${TEXT}\"}" "$SLACK_WEBHOOK_URL"
