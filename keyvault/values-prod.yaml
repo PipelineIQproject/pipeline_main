@@ -1,0 +1,47 @@
+namespace: pipelineiq
+
+secretProviderClass:
+  name: pipelineiq-keyvault-secrets
+  keyvaultName: pipelineiqprodkv
+  tenantId: cc0cfe21-42ac-437c-a9e2-c269833239e1
+  userAssignedIdentityID: 490a9c47-9e05-4ab8-b2f5-a8b6f7993b2b
+
+sync:
+  image: busybox:1.36
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+secrets:
+  - objectName: github-client-id
+    key: GITHUB_CLIENT_ID
+  - objectName: github-client-secret
+    key: GITHUB_CLIENT_SECRET
+  - objectName: github-webhook-secret
+    key: GITHUB_WEBHOOK_SECRET
+  - objectName: jwt-secret
+    key: JWT_SECRET
+  - objectName: token-encryption-key
+    key: TOKEN_ENCRYPTION_KEY
+  - objectName: database-url
+    key: DATABASE_URL
+  - objectName: gemini-api-key
+    key: GEMINI_API_KEY
+  - objectName: azure-openai-api-key
+    key: AZURE_OPENAI_API_KEY
+  - objectName: entra-client-secret
+    key: ENTRA_CLIENT_SECRET
+  - objectName: servicebus-connection-string
+    key: SERVICEBUS_CONNECTION_STRING
+  - objectName: smtp-host
+    key: SMTP_HOST
+  - objectName: smtp-user
+    key: SMTP_USER
+  - objectName: smtp-password
+    key: SMTP_PASSWORD
+  - objectName: smtp-from
+    key: SMTP_FROM

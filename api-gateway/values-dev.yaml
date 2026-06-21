@@ -1,0 +1,17 @@
+namespace: pipelineiq
+host: www.aasikdevops.website
+tlsSecretName: pipelineiq-tls
+ingressClassName: azure-application-gateway
+
+clusterIssuer:
+  create: true
+  name: letsencrypt-prod
+  email: chandanaharish07@gmail.com
+  server: https://acme-v02.api.letsencrypt.org/directory
+  privateKeySecretName: letsencrypt-prod-account-key
+
+certificate:
+  create: false
+  name: pipelineiq-tls
+
+sslRedirect: "true"

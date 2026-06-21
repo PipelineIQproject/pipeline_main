@@ -1,0 +1,27 @@
+namespace: pipelineiq
+replicaCount: 1
+
+image:
+  repository: nimeshsv814/final_capstone-frontend
+  tag: v1.0.9
+
+containerPort: 8080
+
+service:
+  enabled: true
+  port: 80
+  targetPort: 8080
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 48Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi

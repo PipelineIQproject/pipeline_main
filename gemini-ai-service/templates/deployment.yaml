@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemini-ai-service
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: gemini-ai-service
+  template:
+    metadata:
+      labels:
+        app: gemini-ai-service
+    spec:
+      containers:
+        - name: gemini-ai-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.envFrom.configMapName }}
+            - secretRef:
+                name: {{ .Values.envFrom.secretName }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- if .Values.keyvaultMount.enabled }}
+          volumeMounts:
+            - name: keyvault-secrets
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+{{- end }}
+{{- if .Values.keyvaultMount.enabled }}
+      volumes:
+        - name: keyvault-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.keyvaultMount.secretProviderClass }}
+{{- end }}

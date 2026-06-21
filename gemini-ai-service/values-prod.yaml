@@ -1,0 +1,31 @@
+namespace: pipelineiq
+replicaCount: 1
+
+image:
+  repository: nimeshsv814/final_capstone-gemini-ai-service
+  tag: v1.0.5
+
+service:
+  enabled: false
+
+envFrom:
+  configMapName: pipelineiq-config
+  secretName: pipelineiq-kv-secrets
+
+keyvaultMount:
+  enabled: true
+  secretProviderClass: pipelineiq-keyvault-secrets
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 75m
+    memory: 96Mi
+  limits:
+    cpu: 300m
+    memory: 384Mi

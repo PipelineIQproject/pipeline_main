@@ -1,0 +1,27 @@
+namespace: pipelineiq
+replicaCount: 1
+
+image:
+  repository: nimeshsv814/final_capstone-pipeline-runner-service
+  tag: v1.0.4
+
+service:
+  enabled: false
+
+envFrom:
+  configMapName: pipelineiq-config
+  secretName: pipelineiq-kv-secrets
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 48Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi

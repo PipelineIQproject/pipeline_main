@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keyvault-secret-sync
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keyvault-secret-sync
+  template:
+    metadata:
+      labels:
+        app: keyvault-secret-sync
+    spec:
+      containers:
+        - name: sync
+          image: {{ .Values.sync.image }}
+          command: ["sh", "-c", "while true; do sleep 3600; done"]
+          volumeMounts:
+            - name: keyvault-secrets
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+          resources:
+{{ toYaml .Values.sync.resources | indent 12 }}
+      volumes:
+        - name: keyvault-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secretProviderClass.name }}

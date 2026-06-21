@@ -1,0 +1,13 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-analyzer-service
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: workflow-analyzer-service
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+{{- end }}

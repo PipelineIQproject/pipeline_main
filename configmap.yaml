@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pipelineiq-config
+  namespace: pipelineiq
+data:
+  NODE_ENV: "development"
+
+  FRONTEND_URL: "https://www.aasikdevops.website"
+  PUBLIC_API_BASE_URL: "https://www.aasikdevops.website"
+  PUBLIC_AUTH_BASE_URL: "https://www.aasikdevops.website"
+
+  AUTH_SERVICE_URL: "http://auth-service:8081"
+  DASHBOARD_API_URL: "http://dashboard-api:8080"
+  GITHUB_SERVICE_URL: "http://github-integration-service:8082"
+  PIPELINE_RUNNER_URL: "http://pipeline-runner-service:8083"
+  ANALYZER_SERVICE_URL: "http://workflow-analyzer-service:8084"
+  GEMINI_SERVICE_URL: "http://gemini-ai-service:8085"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:8086"
+
+  GITHUB_CALLBACK_URL: "https://www.aasikdevops.website/api/auth/github/callback"
+  AUTH_PROVIDER: "entra"
+  ENTRA_TENANT_ID: "cc0cfe21-42ac-437c-a9e2-c269833239e1"
+  ENTRA_CLIENT_ID: "bd369e65-bd67-4150-b628-ee1925cec78f"
+  ENTRA_CALLBACK_URL: "https://www.aasikdevops.website/api/auth/entra/callback"
+  SESSION_TTL: "8h"
+  AI_PROVIDER: "azure-foundry"
+  AI_FALLBACK_ENABLED: "true"
+  AI_FALLBACK_PROVIDER: "gemini"
+  GEMINI_MODEL: "gemini-2.5-flash"
+  AZURE_OPENAI_ENDPOINT: "https://chandana.services.ai.azure.com"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_API_VERSION: "2024-10-21"
+  QUEUE_PROVIDER: "servicebus"
+  RABBITMQ_URL: "amqp://rabbitmq:5672"
+  SERVICEBUS_NAMESPACE: "servicebusnewch.servicebus.windows.net"
+  SMTP_PORT: "587"
