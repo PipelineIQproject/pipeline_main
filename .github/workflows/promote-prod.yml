@@ -169,6 +169,11 @@ jobs:
       - promote-prod
     if: always()
     steps:
+      - name: Debug email values
+        run: |
+          echo "FROM=${{ secrets.NOTIFY_EMAIL_FROM }}"
+          echo "TO=${{ secrets.NOTIFY_EMAIL_TO }}"
+          echo "SMTP=${{ secrets.SMTP_USERNAME }}"
       - name: Send promotion result email
         uses: dawidd6/action-send-mail@v3
         with:
