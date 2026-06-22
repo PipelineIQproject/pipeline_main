@@ -38,13 +38,48 @@ kubectl argo rollouts promote frontend -n pipelineiq-prod
 kubectl argo rollouts get rollout frontend -n pipelineiq-prod
 ```
 
-## Key Vault Secrets
+## Key Vault Environment
 
-The config chart creates only the Azure Key Vault CSI `SecretProviderClass`. It syncs Key Vault secrets into the Kubernetes Secret named `pipelineiq-kv-secrets`.
+The config chart creates only the Azure Key Vault CSI `SecretProviderClass`. It does not create a Kubernetes `ConfigMap` or `Secret`.
 
-Create these secrets in Azure Key Vault:
+Backend pods mount Key Vault at `/mnt/secrets-store`. Their startup command exports each mounted file as an environment variable by converting the file name from kebab-case to upper snake case. For example:
 
 ```text
+database-url -> DATABASE_URL
+entra-client-id -> ENTRA_CLIENT_ID
+```
+
+Create these Key Vault secrets:
+
+```text
+node-env
+frontend-url
+public-api-base-url
+public-auth-base-url
+auth-service-url
+dashboard-api-url
+github-service-url
+pipeline-runner-url
+analyzer-service-url
+gemini-service-url
+notification-service-url
+github-callback-url
+auth-provider
+entra-tenant-id
+entra-client-id
+entra-callback-url
+session-ttl
+ai-provider
+ai-fallback-enabled
+ai-fallback-provider
+gemini-model
+azure-openai-endpoint
+azure-openai-deployment
+azure-openai-api-version
+queue-provider
+rabbitmq-url
+servicebus-namespace
+smtp-port
 github-client-id
 github-client-secret
 github-webhook-secret
@@ -68,7 +103,5 @@ keyVault.name
 keyVault.tenantId
 keyVault.userAssignedIdentityID
 ```
-
-The running services still reference `pipelineiq-config` for non-secret environment values and `pipelineiq-kv-secrets` for secret values. Keep managing `pipelineiq-config` separately unless you want the service Rollout templates changed to read all environment from Key Vault.
 
 The prod Applications read from `main`, so merge this `argocd` folder to `main` before expecting prod apps to sync successfully.
