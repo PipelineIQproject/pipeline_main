@@ -9,7 +9,7 @@ kubectl apply -f argocd/application.yaml
 The root app syncs every child `application.yaml` under this folder and ignores nested Helm chart files. Each child service creates two ArgoCD Applications:
 
 - `<service>-dev` deploys from branch `dev` into namespace `pipelineiq-dev` with `values-dev.yaml`.
-- `<service>-prod` deploys from branch `master` into namespace `pipelineiq-prod` with `values-prod.yaml`.
+- `<service>-prod` deploys from branch `main` into namespace `pipelineiq-prod` with `values-prod.yaml`.
 
 Config and RabbitMQ use sync wave `0`. Application services use sync wave `1`.
 
@@ -71,4 +71,4 @@ keyVault.userAssignedIdentityID
 
 The running services still reference `pipelineiq-config` for non-secret environment values and `pipelineiq-kv-secrets` for secret values. Keep managing `pipelineiq-config` separately unless you want the service Rollout templates changed to read all environment from Key Vault.
 
-The prod Applications read from `master`, so merge this `argocd` folder to `master` before expecting prod apps to sync successfully.
+The prod Applications read from `main`, so merge this `argocd` folder to `main` before expecting prod apps to sync successfully.

@@ -40,7 +40,7 @@ on:
       helm_prod_branch:
         required: false
         type: string
-        default: master
+        default: main
       production_environment:
         required: false
         type: string

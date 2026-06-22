@@ -35,7 +35,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/PipelineIQproject/pipeline_main.git
-    targetRevision: master
+    targetRevision: main
     path: argocd/frontend/helm
     helm:
       valueFiles:
@@ -49,4 +49,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
