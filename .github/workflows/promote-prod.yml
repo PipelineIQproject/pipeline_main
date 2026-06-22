@@ -161,15 +161,15 @@ jobs:
 
           git commit -m "ci: promote ${{ inputs.service_name }} image ${{ inputs.prod_image_tag }}"
           git push origin "${{ inputs.prod_branch }}"
+      - name: Debug email secrets
+        if: always()
+        run: |
+          echo "SMTP_USERNAME_EMPTY=${{ secrets.SMTP_USERNAME == '' }}"
+          echo "NOTIFY_EMAIL_TO_EMPTY=${{ secrets.NOTIFY_EMAIL_TO == '' }}"
+          echo "NOTIFY_EMAIL_FROM_EMPTY=${{ secrets.NOTIFY_EMAIL_FROM == '' }}"
 
-  notify-email:
-    name: Notify Email
-    runs-on: ubuntu-latest
-    needs:
-      - promote-prod
-    if: always()
-    steps:
       - name: Send promotion result email
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -177,13 +177,13 @@ jobs:
           secure: true
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "PipelineIQ ${{ inputs.service_name }} production promotion ${{ needs.promote-prod.result == 'success' && 'SUCCESS' || 'FAILED' }}"
+          subject: "PipelineIQ ${{ inputs.service_name }} production promotion ${{ job.status }}"
           to: ${{ secrets.NOTIFY_EMAIL_TO }}
-          from: ${{ secrets.SMTP_USERNAME }}
+          from: ${{ secrets.NOTIFY_EMAIL_FROM }}
           body: |
             PipelineIQ ${{ inputs.service_name }} production promotion completed.
 
-            Result: ${{ needs.promote-prod.result }}
+            Status: ${{ job.status }}
             Production Tag: ${{ inputs.prod_image_tag }}
 
             Workflow Run:
