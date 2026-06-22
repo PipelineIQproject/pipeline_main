@@ -182,9 +182,9 @@ jobs:
           from: ${{ secrets.NOTIFY_EMAIL_FROM }}
           body: |
             PipelineIQ ${{ inputs.service_name }} production promotion completed.
-    
+  
             Result: ${{ needs.promote-prod.result }}
             Production Tag: ${{ inputs.prod_image_tag }}
-    
+  
             Workflow Run:
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
