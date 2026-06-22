@@ -172,13 +172,14 @@ jobs:
       - name: Send promotion result email
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "PipelineIQ ${{ inputs.service_name }} production promotion ${{ needs.promote-prod.result == 'success' && 'SUCCESS' || 'FAILED' }}"
           to: ${{ secrets.NOTIFY_EMAIL_TO }}
-          from: ${{ secrets.NOTIFY_EMAIL_FROM }}
+          from: ${{ secrets.SMTP_USERNAME }}
           body: |
             PipelineIQ ${{ inputs.service_name }} production promotion completed.
 
