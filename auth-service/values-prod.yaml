@@ -2,8 +2,8 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: nimeshsv814/final_capstone-auth-service
-  tag: v1.0.8
+  repository: acrchandana.azurecr.io/final_capstone-auth-service
+  tag: v1.1.0
 
 containerPort: 8081
 
