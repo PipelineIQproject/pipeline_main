@@ -21,21 +21,22 @@ on:
         type: string
         default: "frontend"
 
-      dev_image_tag:
-        description: "Existing dev SHA image tag"
+      dev_branch:
+        description: "Branch where values-dev.yaml exists"
         required: true
         type: string
+        default: "dev"
+
+      prod_branch:
+        description: "Branch where values-prod.yaml exists"
+        required: true
+        type: string
+        default: "main"
 
       prod_image_tag:
         description: "Production semantic tag, example v1.0.0"
         required: true
         type: string
-
-      prod_branch:
-        description: "Production branch"
-        required: true
-        type: string
-        default: "main"
 
 jobs:
   promote-prod:
@@ -44,11 +45,54 @@ jobs:
     environment: production
 
     steps:
-      - name: Checkout pipeline_main prod branch
+      - name: Checkout dev branch to read values-dev.yaml
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.dev_branch }}
+          token: ${{ secrets.MAIN_REPO_PAT }}
+          path: dev-helm
+
+      - name: Read dev image tag from values-dev.yaml
+        id: dev_image
+        shell: bash
+        run: |
+          DEV_TAG=$(python - <<'PY'
+          from pathlib import Path
+
+          path = Path("dev-helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          lines = path.read_text().splitlines()
+
+          in_image = False
+          for line in lines:
+              stripped = line.strip()
+
+              if stripped == "image:":
+                  in_image = True
+                  continue
+
+              if in_image and line and not line.startswith((" ", "\t")):
+                  in_image = False
+
+              if in_image and stripped.startswith("tag:"):
+                  print(stripped.split(":", 1)[1].strip().strip('"').strip("'"))
+                  break
+          PY
+          )
+
+          if [ -z "$DEV_TAG" ]; then
+            echo "Could not read dev image tag from values-dev.yaml"
+            exit 1
+          fi
+
+          echo "dev_tag=$DEV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Dev image tag found: $DEV_TAG"
+
+      - name: Checkout prod branch to update values-prod.yaml
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.prod_branch }}
           token: ${{ secrets.MAIN_REPO_PAT }}
+          path: prod-helm
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -60,8 +104,11 @@ jobs:
       - name: Pull dev image, retag as prod, and push
         shell: bash
         run: |
-          DEV_IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${{ inputs.dev_image_tag }}"
+          DEV_IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${{ steps.dev_image.outputs.dev_tag }}"
           PROD_IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${{ inputs.prod_image_tag }}"
+
+          echo "Promoting image:"
+          echo "$DEV_IMAGE -> $PROD_IMAGE"
 
           docker pull "$DEV_IMAGE"
           docker tag "$DEV_IMAGE" "$PROD_IMAGE"
@@ -73,7 +120,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("${{ inputs.chart_path }}") / "values-prod.yaml"
+          path = Path("prod-helm") / "${{ inputs.chart_path }}" / "values-prod.yaml"
           repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
           tag = "${{ inputs.prod_image_tag }}"
 
@@ -105,11 +152,14 @@ jobs:
           PY
 
       - name: Commit and push prod values
+        working-directory: prod-helm
         shell: bash
         run: |
           git config user.name "pipelineiq-ci"
           git config user.email "pipelineiq-ci@users.noreply.github.com"
+
           git add "${{ inputs.chart_path }}/values-prod.yaml"
           git diff --cached --quiet && exit 0
+
           git commit -m "ci: promote ${{ inputs.service_name }} image ${{ inputs.prod_image_tag }}"
           git push origin "${{ inputs.prod_branch }}"
