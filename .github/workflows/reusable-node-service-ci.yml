@@ -152,13 +152,19 @@ jobs:
             -Dsonar.projectKey=${{ inputs.sonar_project_key }}
             -Dsonar.sources=.
 
+      - name: Fix vulnerable Vite version for frontend only
+        if: inputs.service_name == 'frontend'
+        working-directory: ${{ inputs.node_project_dir }}
+        run: |
+          npm install vite@6.4.3 --save-dev
+      
       - name: Snyk dependency scan
         working-directory: ${{ inputs.node_project_dir }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
           npm install -g snyk
-          snyk test --severity-threshold=critical
+          snyk test --severity-threshold=high
 
       - name: Build Docker image
         shell: bash
@@ -172,7 +178,7 @@ jobs:
           vuln-type: os,library
           severity: HIGH,CRITICAL
           exit-code: 1
-
+    
       - name: Snyk container scan
         uses: snyk/actions/docker@master
         env:
