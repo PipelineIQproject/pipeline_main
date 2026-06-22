@@ -55,6 +55,7 @@ on:
         required: false
         type: boolean
         default: true
+
     secrets:
       ACR_LOGIN_SERVER:
         required: true
@@ -68,7 +69,17 @@ on:
         required: true
       MAIN_REPO_PAT:
         required: true
-      SLACK_WEBHOOK_URL:
+      SMTP_SERVER:
+        required: true
+      SMTP_PORT:
+        required: true
+      SMTP_USERNAME:
+        required: true
+      SMTP_PASSWORD:
+        required: true
+      NOTIFY_EMAIL_TO:
+        required: true
+      NOTIFY_EMAIL_FROM:
         required: true
       SMOKE_TEST_ENV_FILE:
         required: false
@@ -157,7 +168,7 @@ jobs:
         working-directory: ${{ inputs.node_project_dir }}
         run: |
           npm install vite@6.4.3 --save-dev
-      
+
       - name: Snyk dependency scan
         working-directory: ${{ inputs.node_project_dir }}
         env:
@@ -178,7 +189,7 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL
           exit-code: 1
-    
+
       - name: Snyk container scan
         uses: snyk/actions/docker@master
         env:
