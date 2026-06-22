@@ -22,14 +22,12 @@ probes:
   readinessPath: /health
   livenessPath: /health
 
-envFrom:
-  enabled: true
-  configMapName: pipelineiq-config
-  secretName: pipelineiq-kv-secrets
-
 keyvaultMount:
-  enabled: false
+  enabled: true
   secretProviderClass: pipelineiq-keyvault-secrets
+
+keyVaultEnv:
+  enabled: true
 
 securityContext:
   runAsNonRoot: true

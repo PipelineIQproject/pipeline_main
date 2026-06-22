@@ -24,6 +24,20 @@ spec:
         - name: {{ .Values.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{ if .Values.keyVaultEnv.enabled }}
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eu
+              for file in /mnt/secrets-store/*; do
+                [ -f "$file" ] || continue
+                name="$(basename "$file" | tr '[:lower:]-' '[:upper:]_')"
+                export "$name=$(cat "$file")"
+              done
+              exec npm start
+          {{ end }}
           {{ if .Values.containerPort }}
           ports:
             - containerPort: {{ .Values.containerPort }}
@@ -36,13 +50,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          {{ if .Values.envFrom.enabled }}
-          envFrom:
-            - configMapRef:
-                name: {{ .Values.envFrom.configMapName }}
-            - secretRef:
-                name: {{ .Values.envFrom.secretName }}
-          {{ end }}
           {{ if .Values.probes.enabled }}
           readinessProbe:
             httpGet:
@@ -74,4 +81,3 @@ spec:
             volumeAttributes:
               secretProviderClass: {{ .Values.keyvaultMount.secretProviderClass }}
       {{ end }}
-
