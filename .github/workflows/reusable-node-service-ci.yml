@@ -164,7 +164,7 @@ jobs:
         run: docker build -t "${{ steps.image.outputs.image_ref }}" -f "${{ inputs.dockerfile }}" .
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.image.outputs.image_ref }}
           format: table
