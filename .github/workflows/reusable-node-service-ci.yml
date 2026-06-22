@@ -284,72 +284,12 @@ jobs:
           git commit -m "ci: update ${{ inputs.service_name }} dev image ${{ needs.build-scan-push.outputs.image_tag }}"
           git push origin "${{ inputs.helm_dev_branch }}"
 
-  update-prod-values:
-    name: Update Prod Helm Values
-    runs-on: ubuntu-latest
-    needs:
-      - build-scan-push
-      - update-dev-values
-    if: inputs.promote_to_prod && github.ref == format('refs/heads/{0}', inputs.helm_dev_branch)
-    environment: ${{ inputs.production_environment }}
-    steps:
-      - name: Checkout main Helm repository master branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.helm_repository }}
-          ref: ${{ inputs.helm_prod_branch }}
-          token: ${{ secrets.MAIN_REPO_PAT }}
-          path: helm
-
-      - name: Update values-prod.yaml
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("helm") / "${{ inputs.chart_path }}" / "values-prod.yaml"
-          repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
-          tag = "${{ needs.build-scan-push.outputs.image_tag }}"
-          lines = path.read_text().splitlines()
-          out = []
-          in_image = False
-          for line in lines:
-              stripped = line.strip()
-              if stripped == "image:":
-                  in_image = True
-                  out.append(line)
-                  continue
-              if in_image and line and not line.startswith((" ", "\t")):
-                  in_image = False
-              if in_image and stripped.startswith("repository:"):
-                  indent = line[:len(line) - len(line.lstrip())]
-                  out.append(f"{indent}repository: {repository}")
-              elif in_image and stripped.startswith("tag:"):
-                  indent = line[:len(line) - len(line.lstrip())]
-                  out.append(f"{indent}tag: {tag}")
-              else:
-                  out.append(line)
-          path.write_text("\n".join(out) + "\n")
-          PY
-
-      - name: Commit and push prod values
-        working-directory: helm
-        shell: bash
-        run: |
-          git config user.name "pipelineiq-ci"
-          git config user.email "pipelineiq-ci@users.noreply.github.com"
-          git add "${{ inputs.chart_path }}/values-prod.yaml"
-          git diff --cached --quiet && exit 0
-          git commit -m "ci: promote ${{ inputs.service_name }} image ${{ needs.build-scan-push.outputs.image_tag }}"
-          git push origin "${{ inputs.helm_prod_branch }}"
-
   notify-slack:
     name: Notify Slack
     runs-on: ubuntu-latest
     needs:
       - build-scan-push
       - update-dev-values
-      - update-prod-values
     if: always()
     steps:
       - name: Send pipeline result
@@ -358,7 +298,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           STATUS="success"
-          if [ "${{ needs.build-scan-push.result }}" = "failure" ] || [ "${{ needs.update-dev-values.result }}" = "failure" ] || [ "${{ needs.update-prod-values.result }}" = "failure" ]; then
+          if [ "${{ needs.build-scan-push.result }}" = "failure" ] || [ "${{ needs.update-dev-values.result }}" = "failure" ] ; then
             STATUS="failure"
           fi
           TEXT="PipelineIQ ${{ inputs.service_name }} pipeline ${STATUS}: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

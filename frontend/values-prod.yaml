@@ -2,8 +2,8 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: nimeshsv814/final_capstone-frontend
-  tag: v1.0.9
+  repository: acrchandana.azurecr.io/final_capstone-frontend
+  tag: e04405039631
 
 containerPort: 8080
 
