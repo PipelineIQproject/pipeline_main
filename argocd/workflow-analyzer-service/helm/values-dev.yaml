@@ -1,0 +1,46 @@
+name: workflow-analyzer-service
+namespace: pipelineiq-dev
+replicaCount: 1
+
+image:
+  repository: nimeshsv814/final_capstone-workflow-analyzer-service
+  tag: v1.0.4
+  pullPolicy: IfNotPresent
+
+containerPort: 8084
+
+service:
+  port: 8084
+  targetPort: 8084
+
+rollout:
+  autoPromotionEnabled: true
+  scaleDownDelaySeconds: 30
+
+probes:
+  enabled: false
+  readinessPath: /health
+  livenessPath: /health
+
+envFrom:
+  enabled: true
+  configMapName: pipelineiq-config
+  secretName: pipelineiq-kv-secrets
+
+keyvaultMount:
+  enabled: false
+  secretProviderClass: pipelineiq-keyvault-secrets
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 75m
+    memory: 96Mi
+  limits:
+    cpu: 300m
+    memory: 384Mi

@@ -1,0 +1,46 @@
+name: notification-service
+namespace: pipelineiq-dev
+replicaCount: 1
+
+image:
+  repository: nimeshsv814/final_capstone-notification-service
+  tag: v1.0.6
+  pullPolicy: IfNotPresent
+
+containerPort: 8086
+
+service:
+  port: 8086
+  targetPort: 8086
+
+rollout:
+  autoPromotionEnabled: true
+  scaleDownDelaySeconds: 30
+
+probes:
+  enabled: false
+  readinessPath: /health
+  livenessPath: /health
+
+envFrom:
+  enabled: true
+  configMapName: pipelineiq-config
+  secretName: pipelineiq-kv-secrets
+
+keyvaultMount:
+  enabled: false
+  secretProviderClass: pipelineiq-keyvault-secrets
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 48Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
