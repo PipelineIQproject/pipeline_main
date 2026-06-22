@@ -153,11 +153,12 @@ jobs:
             -Dsonar.sources=.
 
       - name: Snyk dependency scan
-        uses: snyk/actions/node@master
+        working-directory: ${{ inputs.node_project_dir }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --all-projects --severity-threshold=high
+        run: |
+          npm install -g snyk
+          snyk test --severity-threshold=critical
 
       - name: Build Docker image
         shell: bash
