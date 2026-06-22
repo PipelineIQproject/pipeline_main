@@ -38,8 +38,37 @@ kubectl argo rollouts promote frontend -n pipelineiq-prod
 kubectl argo rollouts get rollout frontend -n pipelineiq-prod
 ```
 
-## Important
+## Key Vault Secrets
 
-The config chart creates a placeholder `pipelineiq-kv-secrets` Secret in both namespaces. Replace placeholder secret values before using this for real traffic, or replace the Secret template with Azure Key Vault CSI / External Secrets.
+The config chart creates only the Azure Key Vault CSI `SecretProviderClass`. It syncs Key Vault secrets into the Kubernetes Secret named `pipelineiq-kv-secrets`.
+
+Create these secrets in Azure Key Vault:
+
+```text
+github-client-id
+github-client-secret
+github-webhook-secret
+jwt-secret
+token-encryption-key
+database-url
+gemini-api-key
+azure-openai-api-key
+entra-client-secret
+servicebus-connection-string
+smtp-host
+smtp-user
+smtp-password
+smtp-from
+```
+
+Update these values in `argocd/config/helm/values-dev.yaml` and `argocd/config/helm/values-prod.yaml`:
+
+```text
+keyVault.name
+keyVault.tenantId
+keyVault.userAssignedIdentityID
+```
+
+The running services still reference `pipelineiq-config` for non-secret environment values and `pipelineiq-kv-secrets` for secret values. Keep managing `pipelineiq-config` separately unless you want the service Rollout templates changed to read all environment from Key Vault.
 
 The prod Applications read from `master`, so merge this `argocd` folder to `master` before expecting prod apps to sync successfully.

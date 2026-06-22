@@ -1,47 +1,37 @@
 namespace: pipelineiq-prod
 
-config:
-  NODE_ENV: development
-  FRONTEND_URL: https://www.pipelinesolutions.xyz
-  PUBLIC_API_BASE_URL: https://www.pipelinesolutions.xyz
-  PUBLIC_AUTH_BASE_URL: https://www.pipelinesolutions.xyz
-  AUTH_SERVICE_URL: http://auth-service:8081
-  DASHBOARD_API_URL: http://dashboard-api:8080
-  GITHUB_SERVICE_URL: http://github-integration-service:8082
-  PIPELINE_RUNNER_URL: http://pipeline-runner-service:8083
-  ANALYZER_SERVICE_URL: http://workflow-analyzer-service:8084
-  GEMINI_SERVICE_URL: http://gemini-ai-service:8085
-  NOTIFICATION_SERVICE_URL: http://notification-service:8086
-  GITHUB_CALLBACK_URL: https://www.pipelinesolutions.xyz/api/auth/github/callback
-  AUTH_PROVIDER: entra
-  ENTRA_TENANT_ID: cc0cfe21-42ac-437c-a9e2-c269833239e1
-  ENTRA_CLIENT_ID: 36e4b78d-393d-4c9a-b6e2-ebf6f040e655
-  ENTRA_CALLBACK_URL: https://www.pipelinesolutions.xyz/api/auth/entra/callback
-  SESSION_TTL: 8h
-  AI_PROVIDER: azure-foundry
-  AI_FALLBACK_ENABLED: "true"
-  AI_FALLBACK_PROVIDER: gemini
-  GEMINI_MODEL: gemini-2.5-flash
-  AZURE_OPENAI_ENDPOINT: https://chandana.services.ai.azure.com
-  AZURE_OPENAI_DEPLOYMENT: gpt-4o-mini
-  AZURE_OPENAI_API_VERSION: "2024-10-21"
-  QUEUE_PROVIDER: rabbitmq
-  RABBITMQ_URL: amqp://rabbitmq:5672
-  SERVICEBUS_NAMESPACE: servicebusnewch.servicebus.windows.net
-  SMTP_PORT: "587"
-
-secrets:
-  GITHUB_CLIENT_ID: replace-me
-  GITHUB_CLIENT_SECRET: replace-me
-  GITHUB_WEBHOOK_SECRET: replace-me
-  JWT_SECRET: replace-me
-  TOKEN_ENCRYPTION_KEY: replace-me
-  DATABASE_URL: postgresql://user:password@host.postgres.database.azure.com:5432/postgres?sslmode=require
-  GEMINI_API_KEY: replace-me
-  AZURE_OPENAI_API_KEY: replace-me
-  ENTRA_CLIENT_SECRET: replace-me
-  SERVICEBUS_CONNECTION_STRING: replace-me
-  SMTP_HOST: replace-me
-  SMTP_USER: replace-me
-  SMTP_PASSWORD: replace-me
-  SMTP_FROM: PipelineIQ <no-reply@example.com>
+keyVault:
+  secretProviderClassName: pipelineiq-keyvault-secrets
+  syncedSecretName: pipelineiq-kv-secrets
+  name: replace-with-prod-keyvault-name
+  tenantId: replace-with-tenant-id
+  userAssignedIdentityID: replace-with-managed-identity-client-id
+  objects:
+    - objectName: github-client-id
+      envKey: GITHUB_CLIENT_ID
+    - objectName: github-client-secret
+      envKey: GITHUB_CLIENT_SECRET
+    - objectName: github-webhook-secret
+      envKey: GITHUB_WEBHOOK_SECRET
+    - objectName: jwt-secret
+      envKey: JWT_SECRET
+    - objectName: token-encryption-key
+      envKey: TOKEN_ENCRYPTION_KEY
+    - objectName: database-url
+      envKey: DATABASE_URL
+    - objectName: gemini-api-key
+      envKey: GEMINI_API_KEY
+    - objectName: azure-openai-api-key
+      envKey: AZURE_OPENAI_API_KEY
+    - objectName: entra-client-secret
+      envKey: ENTRA_CLIENT_SECRET
+    - objectName: servicebus-connection-string
+      envKey: SERVICEBUS_CONNECTION_STRING
+    - objectName: smtp-host
+      envKey: SMTP_HOST
+    - objectName: smtp-user
+      envKey: SMTP_USER
+    - objectName: smtp-password
+      envKey: SMTP_PASSWORD
+    - objectName: smtp-from
+      envKey: SMTP_FROM
