@@ -1,0 +1,37 @@
+namespace: pipelineiq-dev
+
+keyVault:
+  secretProviderClassName: pipelineiq-keyvault-secrets
+  syncedSecretName: pipelineiq-kv-secrets
+  name: keyvaultchandu
+  tenantId: cc0cfe21-42ac-437c-a9e2-c269833239e1
+  userAssignedIdentityID: abd8050f-bf53-44d7-bfd8-a81186bb3220
+  objects:
+    - objectName: github-client-id
+      envKey: GITHUB_CLIENT_ID
+    - objectName: github-client-secret
+      envKey: GITHUB_CLIENT_SECRET
+    - objectName: github-webhook-secret
+      envKey: GITHUB_WEBHOOK_SECRET
+    - objectName: jwt-secret
+      envKey: JWT_SECRET
+    - objectName: token-encryption-key
+      envKey: TOKEN_ENCRYPTION_KEY
+    - objectName: database-url
+      envKey: DATABASE_URL
+    - objectName: gemini-api-key
+      envKey: GEMINI_API_KEY
+    - objectName: azure-openai-api-key
+      envKey: AZURE_OPENAI_API_KEY
+    - objectName: entra-client-secret
+      envKey: ENTRA_CLIENT_SECRET
+    - objectName: servicebus-connection-string
+      envKey: SERVICEBUS_CONNECTION_STRING
+    - objectName: smtp-host
+      envKey: SMTP_HOST
+    - objectName: smtp-user
+      envKey: SMTP_USER
+    - objectName: smtp-password
+      envKey: SMTP_PASSWORD
+    - objectName: smtp-from
+      envKey: SMTP_FROM

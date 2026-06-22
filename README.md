@@ -21,7 +21,7 @@ The workflow performs the capstone CI/CD gates:
 - smoke test
 - push image to Azure Container Registry
 - update this repository's `values-dev.yaml` on `dev`
-- wait for GitHub Environment approval, then update `values-prod.yaml` on `master`
+- wait for GitHub Environment approval, then update `values-prod.yaml` on `main`
 - send Slack success/failure notification
 
 ArgoCD inside AKS should watch this repository. After CI updates a values file, ArgoCD reconciles the cluster deployment.
@@ -59,7 +59,7 @@ Create a GitHub Environment named `production` in every service repository:
 3. Add required reviewers.
 4. Keep deployment branches restricted to `dev` if you only want dev builds to request promotion.
 
-When the service workflow reaches `Update Prod Helm Values`, GitHub pauses the job until approval is granted. After approval, it commits the same tested image tag to `master` in `values-prod.yaml`.
+When the service workflow reaches `Update Prod Helm Values`, GitHub pauses the job until approval is granted. After approval, it commits the same tested image tag to `main` in `values-prod.yaml`.
 
 ## Running a Service Pipeline
 
@@ -87,7 +87,7 @@ service dev push
 -> values-dev.yaml commit to this repo dev
 -> ArgoCD deploys dev
 -> production environment approval
--> values-prod.yaml commit to this repo master
+-> values-prod.yaml commit to this repo main
 -> ArgoCD deploys prod
 ```
 

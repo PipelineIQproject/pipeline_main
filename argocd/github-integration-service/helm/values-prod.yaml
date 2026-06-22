@@ -1,0 +1,46 @@
+name: github-integration-service
+namespace: pipelineiq-prod
+replicaCount: 2
+
+image:
+  repository: nimeshsv814/final_capstone-github-integration-service
+  tag: v1.0.4
+  pullPolicy: IfNotPresent
+
+containerPort: 8082
+
+service:
+  port: 8082
+  targetPort: 8082
+
+rollout:
+  autoPromotionEnabled: false
+  scaleDownDelaySeconds: 30
+
+probes:
+  enabled: true
+  readinessPath: /health
+  livenessPath: /health
+
+envFrom:
+  enabled: true
+  configMapName: pipelineiq-config
+  secretName: pipelineiq-kv-secrets
+
+keyvaultMount:
+  enabled: false
+  secretProviderClass: pipelineiq-keyvault-secrets
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 48Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
