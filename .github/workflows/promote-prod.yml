@@ -1,0 +1,19 @@
+name: Promote To Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Service name
+        required: true
+        type: string
+
+      dev_image_tag:
+        description: Existing SHA image tag
+        required: true
+        type: string
+
+      prod_image_tag:
+        description: Production tag (v1.0.0)
+        required: true
+        type: string
