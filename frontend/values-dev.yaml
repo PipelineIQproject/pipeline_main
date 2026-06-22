@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: acrchandana.azurecr.io/final_capstone-frontend
-  tag: f79e4db7c0a4
+  tag: 68775cb5e09e
 
 containerPort: 8080
 
