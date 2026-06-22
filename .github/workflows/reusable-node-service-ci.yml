@@ -1,232 +1,99 @@
-name: Reusable Node Service CI/CD
+name: Promote Image To Production
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       service_name:
+        description: "Service name"
         required: true
         type: string
-      image_name:
-        required: true
-        type: string
-      dockerfile:
-        required: true
-        type: string
-      node_project_dir:
-        required: true
-        type: string
-      chart_path:
-        required: true
-        type: string
-      container_port:
-        required: true
-        type: string
-      smoke_mode:
-        required: false
-        type: string
-        default: http
-      smoke_path:
-        required: false
-        type: string
-        default: /health
-      helm_repository:
-        required: false
-        type: string
-        default: PipelineIQproject/pipeline_main
-      helm_dev_branch:
-        required: false
-        type: string
-        default: dev
-      helm_prod_branch:
-        required: false
-        type: string
-        default: master
-      production_environment:
-        required: false
-        type: string
-        default: production
-      sonar_organization:
-        required: true
-        type: string
-      sonar_project_key:
-        required: true
-        type: string
-      promote_to_prod:
-        required: false
-        type: boolean
-        default: true
+        default: "frontend"
 
-    secrets:
-      ACR_LOGIN_SERVER:
+      image_name:
+        description: "ACR image name"
         required: true
-      ACR_USERNAME:
+        type: string
+        default: "final_capstone-frontend"
+
+      chart_path:
+        description: "Helm chart path"
         required: true
-      ACR_PASSWORD:
+        type: string
+        default: "frontend"
+
+      dev_branch:
+        description: "Branch where values-dev.yaml exists"
         required: true
-      SONAR_TOKEN:
+        type: string
+        default: "dev"
+
+      prod_branch:
+        description: "Branch where values-prod.yaml exists"
         required: true
-      SNYK_TOKEN:
+        type: string
+        default: "main"
+
+      prod_image_tag:
+        description: "Production semantic tag, example v1.0.0"
         required: true
-      MAIN_REPO_PAT:
-        required: true
-      SMTP_SERVER:
-        required: true
-      SMTP_PORT:
-        required: true
-      SMTP_USERNAME:
-        required: true
-      SMTP_PASSWORD:
-        required: true
-      NOTIFY_EMAIL_TO:
-        required: true
-      NOTIFY_EMAIL_FROM:
-        required: true
-      SMOKE_TEST_ENV_FILE:
-        required: false
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-scan-push:
-    name: Build, Scan, Smoke, Push
+  promote-prod:
+    name: Promote To Production
     runs-on: ubuntu-latest
-    outputs:
-      image_ref: ${{ steps.image.outputs.image_ref }}
-      image_tag: ${{ steps.image.outputs.image_tag }}
+    environment: production
+
     steps:
-      - name: Checkout service repository
+      - name: Checkout dev branch to read values-dev.yaml
         uses: actions/checkout@v4
-
-      - name: Prepare image metadata
-        id: image
-        shell: bash
-        run: |
-          IMAGE_TAG="${GITHUB_SHA::12}"
-          IMAGE_REF="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${IMAGE_TAG}"
-          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
-          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          ref: ${{ inputs.dev_branch }}
+          path: dev-helm
 
-      - name: Install dependencies
-        working-directory: ${{ inputs.node_project_dir }}
+      - name: Read dev image tag from values-dev.yaml
+        id: dev_image
         shell: bash
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          DEV_TAG=$(python - <<'PY'
+          from pathlib import Path
 
-      - name: Lint when script exists
-        working-directory: ${{ inputs.node_project_dir }}
-        shell: bash
-        run: |
-          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.lint ? 0 : 1)"; then
-            npm run lint
-          else
-            echo "No lint script found; add one to make this gate stricter."
-          fi
+          path = Path("dev-helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          lines = path.read_text().splitlines()
 
-      - name: Test when script exists
-        working-directory: ${{ inputs.node_project_dir }}
-        shell: bash
-        run: |
-          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
-            npm test
-          else
-            echo "No test script found; add one to make this gate stricter."
-          fi
+          in_image = False
+          for line in lines:
+              stripped = line.strip()
 
-      - name: Build app when script exists
-        working-directory: ${{ inputs.node_project_dir }}
-        shell: bash
-        run: |
-          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)"; then
-            npm run build
-          else
-            echo "No build script found; Docker build remains the build gate."
-          fi
+              if stripped == "image:":
+                  in_image = True
+                  continue
 
-      - name: SonarQube Cloud scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          args: >
-            -Dsonar.organization=${{ inputs.sonar_organization }}
-            -Dsonar.projectKey=${{ inputs.sonar_project_key }}
-            -Dsonar.sources=.
+              if in_image and line and not line.startswith((" ", "\t")):
+                  in_image = False
 
-      - name: Fix vulnerable Vite version for frontend only
-        if: inputs.service_name == 'frontend'
-        working-directory: ${{ inputs.node_project_dir }}
-        run: |
-          npm install vite@6.4.3 --save-dev
+              if in_image and stripped.startswith("tag:"):
+                  print(stripped.split(":", 1)[1].strip().strip('"').strip("'"))
+                  break
+          PY
+          )
 
-      - name: Snyk dependency scan
-        working-directory: ${{ inputs.node_project_dir }}
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          npm install -g snyk
-          snyk test --severity-threshold=high
-
-      - name: Build Docker image
-        shell: bash
-        run: docker build -t "${{ steps.image.outputs.image_ref }}" -f "${{ inputs.dockerfile }}" .
-
-      - name: Trivy image scan
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: ${{ steps.image.outputs.image_ref }}
-          format: table
-          vuln-type: os,library
-          severity: CRITICAL
-          exit-code: 1
-
-      - name: Snyk container scan
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: ${{ steps.image.outputs.image_ref }}
-          args: --severity-threshold=high
-
-      - name: Smoke test image
-        shell: bash
-        env:
-          SMOKE_TEST_ENV_FILE: ${{ secrets.SMOKE_TEST_ENV_FILE }}
-        run: |
-          set -euo pipefail
-          if [ -n "${SMOKE_TEST_ENV_FILE:-}" ]; then
-            printf "%s" "$SMOKE_TEST_ENV_FILE" > smoke.env
-            ENV_ARGS="--env-file smoke.env"
-          else
-            ENV_ARGS=""
-          fi
-
-          if [ "${{ inputs.smoke_mode }}" = "http" ]; then
-            docker run -d --name smoke $ENV_ARGS -p 127.0.0.1:${{ inputs.container_port }}:${{ inputs.container_port }} "${{ steps.image.outputs.image_ref }}"
-            for attempt in $(seq 1 30); do
-              if curl -fsS "http://127.0.0.1:${{ inputs.container_port }}${{ inputs.smoke_path }}"; then
-                docker logs smoke
-                docker rm -f smoke
-                exit 0
-              fi
-              sleep 2
-            done
-            docker logs smoke
-            docker rm -f smoke
+          if [ -z "$DEV_TAG" ]; then
+            echo "Could not read dev image tag from values-dev.yaml"
             exit 1
           fi
 
-          docker run --rm "${{ steps.image.outputs.image_ref }}" node --version
+          echo "dev_tag=$DEV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Dev image tag found: $DEV_TAG"
+
+      - name: Checkout prod branch to update values-prod.yaml
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.prod_branch }}
+          path: prod-helm
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -235,44 +102,41 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Push image to ACR
+      - name: Pull dev image, retag as prod, and push
         shell: bash
-        run: docker push "${{ steps.image.outputs.image_ref }}"
+        run: |
+          DEV_IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${{ steps.dev_image.outputs.dev_tag }}"
+          PROD_IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}:${{ inputs.prod_image_tag }}"
 
-  update-dev-values:
-    name: Update Dev Helm Values
-    runs-on: ubuntu-latest
-    needs: build-scan-push
-    if: github.ref == format('refs/heads/{0}', inputs.helm_dev_branch)
-    steps:
-      - name: Checkout main Helm repository dev branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.helm_repository }}
-          ref: ${{ inputs.helm_dev_branch }}
-          token: ${{ secrets.MAIN_REPO_PAT }}
-          path: helm
+          docker pull "$DEV_IMAGE"
+          docker tag "$DEV_IMAGE" "$PROD_IMAGE"
+          docker push "$PROD_IMAGE"
 
-      - name: Update values-dev.yaml
+      - name: Update values-prod.yaml
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          path = Path("prod-helm") / "${{ inputs.chart_path }}" / "values-prod.yaml"
           repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
-          tag = "${{ needs.build-scan-push.outputs.image_tag }}"
+          tag = "${{ inputs.prod_image_tag }}"
+
           lines = path.read_text().splitlines()
           out = []
           in_image = False
+
           for line in lines:
               stripped = line.strip()
+
               if stripped == "image:":
                   in_image = True
                   out.append(line)
                   continue
+
               if in_image and line and not line.startswith((" ", "\t")):
                   in_image = False
+
               if in_image and stripped.startswith("repository:"):
                   indent = line[:len(line) - len(line.lstrip())]
                   out.append(f"{indent}repository: {repository}")
@@ -281,43 +145,46 @@ jobs:
                   out.append(f"{indent}tag: {tag}")
               else:
                   out.append(line)
+
           path.write_text("\n".join(out) + "\n")
           PY
 
-      - name: Commit and push dev values
-        working-directory: helm
+      - name: Commit and push prod values
+        working-directory: prod-helm
         shell: bash
         run: |
           git config user.name "pipelineiq-ci"
           git config user.email "pipelineiq-ci@users.noreply.github.com"
-          git add "${{ inputs.chart_path }}/values-dev.yaml"
+
+          git add "${{ inputs.chart_path }}/values-prod.yaml"
           git diff --cached --quiet && exit 0
-          git commit -m "ci: update ${{ inputs.service_name }} dev image ${{ needs.build-scan-push.outputs.image_tag }}"
-          git push origin "${{ inputs.helm_dev_branch }}"
+
+          git commit -m "ci: promote ${{ inputs.service_name }} image ${{ inputs.prod_image_tag }}"
+          git push origin "${{ inputs.prod_branch }}"
 
   notify-email:
     name: Notify Email
     runs-on: ubuntu-latest
     needs:
-      - build-scan-push
-      - update-dev-values
+      - promote-prod
     if: always()
     steps:
-      - name: Send pipeline result email
+      - name: Send promotion result email
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "PipelineIQ ${{ inputs.service_name }} dev pipeline ${{ needs.build-scan-push.result == 'success' && needs.update-dev-values.result == 'success' && 'SUCCESS' || 'FAILED' }}"
+          subject: "PipelineIQ ${{ inputs.service_name }} production promotion ${{ needs.promote-prod.result == 'success' && 'SUCCESS' || 'FAILED' }}"
           to: ${{ secrets.NOTIFY_EMAIL_TO }}
           from: ${{ secrets.NOTIFY_EMAIL_FROM }}
           body: |
-            PipelineIQ ${{ inputs.service_name }} dev pipeline completed.
-  
-            Build/Scan/Push: ${{ needs.build-scan-push.result }}
-            Update Dev Values: ${{ needs.update-dev-values.result }}
-  
+            PipelineIQ ${{ inputs.service_name }} production promotion completed.
+
+            Result: ${{ needs.promote-prod.result }}
+            Production Tag: ${{ inputs.prod_image_tag }}
+
             Workflow Run:
-              ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
