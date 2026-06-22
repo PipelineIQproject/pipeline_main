@@ -162,7 +162,6 @@ jobs:
           git commit -m "ci: promote ${{ inputs.service_name }} image ${{ inputs.prod_image_tag }}"
           git push origin "${{ inputs.prod_branch }}"
 
-
   notify-email:
     name: Notify Email
     runs-on: ubuntu-latest

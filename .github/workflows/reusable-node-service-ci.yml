@@ -315,9 +315,9 @@ jobs:
           from: ${{ secrets.NOTIFY_EMAIL_FROM }}
           body: |
             PipelineIQ ${{ inputs.service_name }} dev pipeline completed.
-
+  
             Build/Scan/Push: ${{ needs.build-scan-push.result }}
             Update Dev Values: ${{ needs.update-dev-values.result }}
-
+  
             Workflow Run:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
