@@ -227,11 +227,6 @@ jobs:
           fi
 
           docker run --rm "${{ steps.image.outputs.image_ref }}" node --version
-      - name: Print secrets
-        run: |
-          echo "SMTP_USERNAME_EMPTY=${{ secrets.ACR_LOGIN_SERVER }}"
-          echo "NOTIFY_EMAIL_TO_EMPTY=${{ secrets.ACR_USERNAME }}"
-          echo "NOTIFY_EMAIL_FROM_EMPTY=${{ secrets.ACR_PASSWORD }}"
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
