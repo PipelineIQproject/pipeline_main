@@ -2,9 +2,9 @@ namespace: pipelineiq-prod
 
 keyVault:
   secretProviderClassName: pipelineiq-keyvault-secrets
-  name: replace-with-prod-keyvault-name
-  tenantId: replace-with-tenant-id
-  userAssignedIdentityID: replace-with-managed-identity-client-id
+  name: keyvaultchandu
+  tenantId: cc0cfe21-42ac-437c-a9e2-c269833239e1
+  userAssignedIdentityID: abd8050f-bf53-44d7-bfd8-a81186bb3220
   objects:
     - objectName: node-env
     - objectName: frontend-url
