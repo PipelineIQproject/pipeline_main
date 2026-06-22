@@ -284,22 +284,29 @@ jobs:
           git commit -m "ci: update ${{ inputs.service_name }} dev image ${{ needs.build-scan-push.outputs.image_tag }}"
           git push origin "${{ inputs.helm_dev_branch }}"
 
-  notify-slack:
-    name: Notify Slack
+  notify-email:
+    name: Notify Email
     runs-on: ubuntu-latest
     needs:
       - build-scan-push
       - update-dev-values
     if: always()
     steps:
-      - name: Send pipeline result
-        shell: bash
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          STATUS="success"
-          if [ "${{ needs.build-scan-push.result }}" = "failure" ] || [ "${{ needs.update-dev-values.result }}" = "failure" ] ; then
-            STATUS="failure"
-          fi
-          TEXT="PipelineIQ ${{ inputs.service_name }} pipeline ${STATUS}: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${TEXT}\"}" "$SLACK_WEBHOOK_URL"
+      - name: Send pipeline result email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "PipelineIQ ${{ inputs.service_name }} dev pipeline ${{ needs.build-scan-push.result == 'success' && needs.update-dev-values.result == 'success' && 'SUCCESS' || 'FAILED' }}"
+          to: ${{ secrets.NOTIFY_EMAIL_TO }}
+          from: ${{ secrets.NOTIFY_EMAIL_FROM }}
+          body: |
+            PipelineIQ ${{ inputs.service_name }} dev pipeline completed.
+  
+            Build/Scan/Push: ${{ needs.build-scan-push.result }}
+            Update Dev Values: ${{ needs.update-dev-values.result }}
+  
+            Workflow Run:
+              ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
