@@ -3,21 +3,12 @@ kind: Ingress
 metadata:
   name: pipelineiq-agic
   namespace: pipelineiq-dev
-  annotations:
-    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
 spec:
   ingressClassName: azure-application-gateway
   rules:
     - host: www.pipelinesolutions.xyz
       http:
         paths:
-          - path: /api/webhooks/github
-            pathType: Prefix
-            backend:
-              service:
-                name: webhook-service
-                port:
-                  number: 8087
           - path: /api/auth
             pathType: Prefix
             backend:
@@ -25,6 +16,15 @@ spec:
                 name: auth-service
                 port:
                   number: 8081
+
+          - path: /api/webhooks/github
+            pathType: Prefix
+            backend:
+              service:
+                name: webhook-service
+                port:
+                  number: 8087
+
           - path: /api
             pathType: Prefix
             backend:
@@ -32,6 +32,7 @@ spec:
                 name: dashboard-api
                 port:
                   number: 8080
+
           - path: /
             pathType: Prefix
             backend:
