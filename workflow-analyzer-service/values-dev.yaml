@@ -2,7 +2,7 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: acrchandana.azurecr.io/final_capstone-workflow-analyzer-service
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-workflow-analyzer-service
   tag: 3f8390d4c74f
 
 service:
