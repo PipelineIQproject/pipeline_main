@@ -6,14 +6,11 @@ metadata:
   annotations:
     appgw.ingress.kubernetes.io/appgw-ssl-certificate: cert-pipelineiq-pipelineiq-tls
     appgw.ingress.kubernetes.io/ssl-redirect: "true"
-    appgw.ingress.kubernetes.io/backend-protocol: "https"
 spec:
   ingressClassName: azure-application-gateway
-
   tls:
     - hosts:
         - argocd.pipelinesolutions.xyz
-
   rules:
     - host: argocd.pipelinesolutions.xyz
       http:
@@ -24,4 +21,4 @@ spec:
               service:
                 name: argocd-server
                 port:
-                  number: 443
+                  number: 80
