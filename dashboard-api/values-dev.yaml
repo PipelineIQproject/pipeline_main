@@ -2,8 +2,8 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: acrchandana.azurecr.io/final_capstone-dashboard-api
-  tag: d4c4d8f12fa2
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-dashboard-api
+  tag: 25a342a1a06b
 
 containerPort: 8080
 
