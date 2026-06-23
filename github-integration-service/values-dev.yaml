@@ -2,7 +2,7 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: acrchandana.azurecr.io/final_capstone-github-integration-service
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-github-integration-service
   tag: 604b23b03d37
 
 containerPort: 8082
