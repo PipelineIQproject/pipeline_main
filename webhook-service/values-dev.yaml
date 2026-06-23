@@ -2,8 +2,8 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: acrchandana.azurecr.io/final_capstone-webhook-service
-  tag: 375a815d1fee
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-webhook-service
+  tag: b7669b34237b
 
 containerPort: 8087
 
