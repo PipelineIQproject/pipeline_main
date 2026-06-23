@@ -2,8 +2,8 @@ namespace: pipelineiq
 replicaCount: 1
 
 image:
-  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-gemini-ai-service
-  tag: d70d8e317e88
+  repository: acrchandana.azurecr.io/final_capstone-gemini-ai-service
+  tag: 2341772cec25
 
 service:
   enabled: false
