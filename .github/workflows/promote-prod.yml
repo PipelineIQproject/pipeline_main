@@ -61,7 +61,7 @@ jobs:
           DEV_TAG=$(python - <<'PY'
           from pathlib import Path
 
-          path = Path("dev-helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          path = Path("dev-helm") / "argocd" / "${{ inputs.service_name }}" / "helm" / "values-dev.yaml"
           lines = path.read_text().splitlines()
 
           in_image = False
@@ -118,7 +118,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("prod-helm") / "${{ inputs.chart_path }}" / "values-prod.yaml"
+          path = Path("prod-helm") / "argocd" / "${{ inputs.service_name }}" / "helm" / "values-prod.yaml"
           repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
           tag = "${{ inputs.prod_image_tag }}"
 
@@ -156,11 +156,12 @@ jobs:
           git config user.name "pipelineiq-ci"
           git config user.email "pipelineiq-ci@users.noreply.github.com"
 
-          git add "${{ inputs.chart_path }}/values-prod.yaml"
+          git add "argocd/${{ inputs.service_name }}/helm/values-prod.yaml"
           git diff --cached --quiet && exit 0
 
           git commit -m "ci: promote ${{ inputs.service_name }} image ${{ inputs.prod_image_tag }}"
           git push origin "${{ inputs.prod_branch }}"
+
       - name: Debug email secrets
         if: always()
         run: |
