@@ -4,7 +4,7 @@ replicaCount: 2
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-auth-service
-  tag: v1.0.8
+  tag: v1.1.0
   pullPolicy: IfNotPresent
 
 containerPort: 8081
