@@ -1,7 +1,7 @@
 namespace: pipelineiq
 
 secretProviderClass:
-  name: 
+  name: pipelineiq-keyvault-secrets
   keyvaultName: pipelineiqproda814kv
   tenantId: a9c0d434-d5c8-4c38-aab2-f3041871ebf8
   userAssignedIdentityID: b0e7e55a-2dff-477d-9f72-c554b3d8221a
