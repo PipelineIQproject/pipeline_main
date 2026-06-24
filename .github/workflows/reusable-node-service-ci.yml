@@ -259,7 +259,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("helm") / "${{ inputs.chart_path }}" / "values-dev.yaml"
+          path = Path("helm") / "argocd" / "${{ inputs.service_name }}" / "helm" / "values-dev.yaml"
           repository = "${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.image_name }}"
           tag = "${{ needs.build-scan-push.outputs.image_tag }}"
           lines = path.read_text().splitlines()
@@ -290,7 +290,7 @@ jobs:
         run: |
           git config user.name "pipelineiq-ci"
           git config user.email "pipelineiq-ci@users.noreply.github.com"
-          git add "${{ inputs.chart_path }}/values-dev.yaml"
+          git add "argocd/${{ inputs.service_name }}/helm/values-dev.yaml"
           git diff --cached --quiet && exit 0
           git commit -m "ci: update ${{ inputs.service_name }} dev image ${{ needs.build-scan-push.outputs.image_tag }}"
           git push origin "${{ inputs.helm_dev_branch }}"
@@ -315,9 +315,9 @@ jobs:
           from: ${{ secrets.NOTIFY_EMAIL_FROM }}
           body: |
             PipelineIQ ${{ inputs.service_name }} dev pipeline completed.
-  
+
             Build/Scan/Push: ${{ needs.build-scan-push.result }}
             Update Dev Values: ${{ needs.update-dev-values.result }}
-  
+
             Workflow Run:
               ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
