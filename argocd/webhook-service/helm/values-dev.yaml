@@ -3,7 +3,7 @@ namespace: pipelineiq-dev
 replicaCount: 1
 
 image:
-  repository: nimeshsv814/final_capstone-webhook-service
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-webhook-service
   tag: v1.0.4
   pullPolicy: IfNotPresent
 
