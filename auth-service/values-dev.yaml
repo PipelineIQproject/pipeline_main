@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-auth-service
-  tag: 310e5be54560
+  tag: c5418a4caaec
 
 containerPort: 8081
 
