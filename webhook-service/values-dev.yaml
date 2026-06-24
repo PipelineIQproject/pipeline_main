@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-webhook-service
-  tag: b7669b34237b
+  tag: 690e0595a81d
 
 containerPort: 8087
 
