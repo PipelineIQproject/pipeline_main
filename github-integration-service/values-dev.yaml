@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-github-integration-service
-  tag: 570392d60547
+  tag: f843e3bf5cf9
 
 containerPort: 8082
 
