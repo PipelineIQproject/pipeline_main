@@ -2,9 +2,9 @@ namespace: pipelineiq-prod
 
 keyVault:
   secretProviderClassName: pipelineiq-keyvault-secrets
-  name: keyvaultchandu
-  tenantId: cc0cfe21-42ac-437c-a9e2-c269833239e1
-  userAssignedIdentityID: abd8050f-bf53-44d7-bfd8-a81186bb3220
+  name: pipelineiqproda814kv
+  tenantId: a9c0d434-d5c8-4c38-aab2-f3041871ebf8
+  userAssignedIdentityID: 3a5ce30d-96a6-46c4-8822-53cf72418617
   objects:
     - objectName: node-env
     - objectName: frontend-url
