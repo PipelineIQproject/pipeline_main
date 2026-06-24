@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-dashboard-api
-  tag: 25a342a1a06b
+  tag: 5f90dd5f2c01
 
 containerPort: 8080
 
