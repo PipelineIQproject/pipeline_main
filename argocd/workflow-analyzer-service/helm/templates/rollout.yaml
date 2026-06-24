@@ -36,7 +36,7 @@ spec:
                 name="$(basename "$file" | tr '[:lower:]-' '[:upper:]_')"
                 export "$name=$(cat "$file")"
               done
-              exec node src/index.js
+              exec node src/worker.js
           {{ end }}
           {{ if .Values.containerPort }}
           ports:
