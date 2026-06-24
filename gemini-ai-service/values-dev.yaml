@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-gemini-ai-service
-  tag: d182b19c6620
+  tag: a5ab5e7d2e43
 
 service:
   enabled: false
