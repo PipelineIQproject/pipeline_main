@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-workflow-analyzer-service
-  tag: da482e04bf8f
+  tag: e5a2dfcb5f16
 
 service:
   enabled: false
