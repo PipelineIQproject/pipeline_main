@@ -4,7 +4,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-frontend
-  tag: 1b0a0082b97e
+  tag: c9a1e57a8d6b
   pullPolicy: IfNotPresent
 
 containerPort: 8080
