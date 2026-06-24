@@ -3,7 +3,7 @@ namespace: pipelineiq-dev
 replicaCount: 1
 
 image:
-  repository: nimeshsv814/final_capstone-dashboard-api
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-dashboard-api
   tag: v1.0.5
   pullPolicy: IfNotPresent
 
