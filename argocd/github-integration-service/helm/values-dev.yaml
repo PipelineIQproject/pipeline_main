@@ -3,7 +3,7 @@ namespace: pipelineiq-dev
 replicaCount: 1
 
 image:
-  repository: npipelineiqproda81487xyepacr.azurecr.io/final_capstone-github-integration-service
+  repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-github-integration-service
   tag: v1.0.4
   pullPolicy: IfNotPresent
 
