@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: pipelineiqproda81487xyepacr.azurecr.io/final_capstone-notification-service
-  tag: 4e45b3dbb8a1
+  tag: e2c221e6c826
 
 service:
   enabled: false
